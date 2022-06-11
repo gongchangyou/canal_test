@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @author gongchangyou
@@ -33,6 +35,7 @@ public class CanalClient implements CommandLineRunner {
      */
     @Override
     public void run(String... args) throws Exception {
+        Executors.newSingleThreadExecutor().submit(()-> {
         // 创建链接
         CanalConnector connector = CanalConnectors.newSingleConnector(new InetSocketAddress(AddressUtils.getHostIp(),
                 11111), "example", "", "");
@@ -42,7 +45,7 @@ public class CanalClient implements CommandLineRunner {
             connector.connect();
             connector.subscribe(".*\\..*");
             connector.rollback();
-            int totalEmptyCount = 120;
+            int totalEmptyCount = 1200;
             while (emptyCount < totalEmptyCount) {
                 Message message = connector.getWithoutAck(batchSize); // 获取指定数量的数据
                 long batchId = message.getId();
@@ -65,9 +68,14 @@ public class CanalClient implements CommandLineRunner {
             }
 
             System.out.println("empty too many times, exit");
-        } finally {
+        }
+        catch (Exception e) {
+            log.error("connect error {}", e.getMessage(), e);
+        }
+        finally {
             connector.disconnect();
         }
+    });
     }
 
     private static void printEntry(List<Entry> entrys) {
