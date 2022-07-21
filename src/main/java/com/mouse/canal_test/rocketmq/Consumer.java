@@ -42,5 +42,12 @@ public class Consumer implements CommandLineRunner {
             });
 //        }
         });
+
+        Executors.newFixedThreadPool(1).submit(()-> {
+            messageSource.input2().subscribe(msg -> {
+                log.info("input2 payload=" + new String((byte[]) msg.getPayload()));
+
+            });
+        });
     }
 }
